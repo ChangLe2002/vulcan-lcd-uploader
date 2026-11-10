@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+# 开发期依赖（打包与测试）—— 不进入最终运行时
+-r requirements.txt
+
+# 打包。必须在项目虚拟环境中执行 pyinstaller main.spec
+pyinstaller>=6.10,<7.0
+
+# 单元测试
+pytest>=8.0,<9.0

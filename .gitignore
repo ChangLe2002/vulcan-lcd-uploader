@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: MIT
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- 项目虚拟环境（绝不提交）----
+.venv_local/
+.venv/
+venv/
+
+# ---- 运行时产物 ----
+logs/
+config/settings.user.json
+debug_report.md
+debug_report.json
+ui_prefs.json
+recent_files.json
+device_state.json
+*.log
+
+# ---- 打包产物 ----
+build/
+dist/
+*.manifest
+*.spec.bak
+
+# ---- 仅本地查证用：官方程序集反编译结果，禁止再分发 ----
+decomp/
+decomp_all/
+review/
+deliverable/
+frames/
+probe/
+test/
+tmp*/
+pytest-of-*/
+
+# ---- 抓包与素材（可能含设备私有数据/第三方版权素材）----
+capture*.txt
+capture*.pcap
+*.pak
+*.pcapng
+design*.png
+probe*.png
+assets_*.png
+shot_*.png
+preview_*.png
+official*.pak
+test_*.pak
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# ---- 根目录临时截图 / 对比图（只保留源码与资源）----
+/*.png
+/*.jpg
+/*.jpeg
+/*.gif
+build_assets/*.png
+
+# ---- 第三方命令行工具（ILSpy 等，体积大且非本项目代码）----
+tools/ilspy_any/
+tools/ILSpy/
+
+# ---- 根目录二进制样本 / 反编译工具包 ----
+/*.bin
+tools/ilspy_*
+tools/*.zip
+tools/*.nupkg
+tools/*.exe
+
+# ---- 抓包与临时脚本（可能含设备数据）----
+/*.pcap
+/*.pcapng
+/selftest.txt
+/selftest.json
+/uploaded_files.json
+/_*.py
+
+# ---- 发布附件（体积大，走 GitHub Release，不进仓库）----
+/release/
+
+# ---- 与项目无关的临时实验脚本 ----
+/mc*.py
+/grid_guide.py
+/*_compare.png

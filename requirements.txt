@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+# 运行期依赖 —— 必须在项目虚拟环境 .venv_local\python 中安装
+# 目标解释器：Python 3.10 / 3.11（推荐 3.11.x）
+
+# 串口通信（注意：包名 pyserial，导入名 serial）
+pyserial>=3.5,<4.0
+
+# 图像解码 / Lanczos 重采样 / GIF 帧遍历
+Pillow>=10.4,<12.0
+
+# GUI。用 PySide6-Essentials 而非完整 PySide6：只含 QtCore/QtGui/QtWidgets，
+# 避免拉入 WebEngine 等约 300MB 的 Addons。若 import 失败，见 README 第 9 节。
+PySide6-Essentials>=6.7,<7.0
+
+# NVML（NVIDIA 官方 Python 绑定）。PyPI 上的 "pynvml" 只是它的旧包装包，
+# 这里锁官方包；代码中仍然 import pynvml。
+nvidia-ml-py>=12.550
+
+# CPU 使用率 / 频率 / 温度
+psutil>=5.9,<8.0

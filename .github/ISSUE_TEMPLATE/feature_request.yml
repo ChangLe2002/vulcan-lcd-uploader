@@ -1,0 +1,16 @@
+﻿name: 功能建议
+description: 想要的新能力或改进
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: 你的想法
+      description: 想解决什么问题？希望怎么用？
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 协议/设备依据（可选）
+      description: 如果涉及设备指令，请附抓包或反编译证据；没有证据的功能会被标为实验性

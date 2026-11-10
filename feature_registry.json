@@ -1,0 +1,394 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-11-06T14:50:56+08:00",
+  "_comment": "功能状态的唯一事实来源。生产模式只允许 status=verified 的功能向串口写数据。任何状态变更必须同步 CHANGELOG.md。status 只能是 verified / experimental / disabled / removed。",
+  "features": [
+    {
+      "feature_id": "checksum_16le",
+      "name": "16 位累加校验",
+      "module": "src/vulcan_lcd/core/protocol.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [],
+      "last_test_at": "2026-11-04T08:40:00+08:00",
+      "last_result": "pass",
+      "error_summary": null,
+      "suggested_action": "none",
+      "test_env": {
+        "model": "RTX 5070",
+        "port": "COM4",
+        "service": "iGameCenterService 2.0.0.82",
+        "python": "3.11.9"
+      },
+      "notes": "feature_id 沿用需求里的历史命名；实机证明是**大端**（MSB 在前），实现为 struct.pack('>H')。3 个真实向量（握手请求/设备应答/文档 step8）全部自洽。"
+    },
+    {
+      "feature_id": "venv_bootstrap",
+      "name": "虚拟环境引导与依赖校验",
+      "module": "scripts/bootstrap_venv.ps1, scripts/verify_env.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": false,
+      "depends_on": [],
+      "last_test_at": "2026-11-04T06:40:00+08:00",
+      "last_result": "pass",
+      "error_summary": null,
+      "suggested_action": "none",
+      "test_env": {
+        "python": "3.11.9",
+        "venv": "F:\\shuchu\\.venv_local\\python"
+      },
+      "notes": "幂等接管已有 venv，不重建不升级；找不到 3.10/3.11 时非零退出，绝不回退系统 Python。"
+    },
+    {
+      "feature_id": "title_display",
+      "name": "文字投屏（title）",
+      "module": "src/vulcan_lcd/core/protocol.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [
+        "checksum_16le"
+      ],
+      "last_test_at": "2026-11-04T08:40:00+08:00",
+      "last_result": "pass",
+      "error_summary": null,
+      "suggested_action": "none",
+      "test_env": {
+        "model": "RTX 5070",
+        "port": "COM4",
+        "service": "iGameCenterService 2.0.0.82"
+      },
+      "notes": "实机渲染成功（'I LOVE YOU'、'VULCAN 5070 OK'）。字符集仅 A-Z 0-9 . 空格；其它字节设备静默丢弃，因此 encode_title 必须回报 dropped 列表。新增 feature（不在原始 12 项内），因已实证可用故单列。"
+    },
+    {
+      "feature_id": "auto_port_scan",
+      "name": "串口自动发现",
+      "module": "src/vulcan_lcd/core/port_scanner.py, core/handshake.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [
+        "checksum_16le"
+      ],
+      "last_test_at": "2026-11-05T08:47:53+08:00",
+      "last_result": "pass",
+      "error_summary": "",
+      "suggested_action": "",
+      "test_env": {
+        "model": "RTX 5070",
+        "port": "COM5",
+        "service": "iGameCenterService 2.0.0.82"
+      },
+      "notes": "按 USB VID:PID=1B3F:0123 匹配串口（pyserial hwid）；换针脚后端口由 COM4 变 COM5，自动识别成功"
+    },
+    {
+      "feature_id": "service_control",
+      "name": "官方服务接管",
+      "module": "src/vulcan_lcd/system/service_control.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": false,
+      "depends_on": [],
+      "last_test_at": "2026-11-04T09:20:00+08:00",
+      "last_result": "pass",
+      "error_summary": null,
+      "suggested_action": "none",
+      "test_env": {
+        "service": "iGameCenterService 2.0.0.82",
+        "model": "RTX 5070",
+        "port": "COM4"
+      },
+      "notes": "实机跑通完整循环：takeover 2.0s（服务 STOPPED，COM4 从 PORT_BUSY 变为可独占），release 10.8s（恢复 RUNNING）。启动明显慢于停止，故单次等待预算设为 12s。踩过两个坑：START_PENDING 期间 sc stop 被系统忽略；服务异常时返回 1061 拒绝控制消息（需重启 iGame Center 或结束服务进程）。两种情况都已加处理与测试。"
+    },
+    {
+      "feature_id": "gif_upload",
+      "name": "GIF 上传",
+      "module": "src/vulcan_lcd/features/gif_upload.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [
+        "checksum_16le"
+      ],
+      "last_test_at": "2026-11-04T16:07:10+08:00",
+      "last_result": "pass",
+      "error_summary": "",
+      "suggested_action": "",
+      "test_env": {
+        "model": "RTX 5070",
+        "port": "COM4",
+        "service": "iGameCenterService 2.0.0.82"
+      },
+      "notes": "关键修正：①数据块头第3-4字节是16位大端长度=总长-5（不是常量 0x4006）；②e51a 是主机→设备的「显示该文件」指令，每秒一次，不发则回默认动画；③e619 是「查询文件清单」请求，9 字节空帧→设备回列表"
+    },
+    {
+      "feature_id": "static_image",
+      "name": "静态图片上传",
+      "module": "src/vulcan_lcd/features/static_image.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [
+        "gif_upload"
+      ],
+      "last_test_at": "2026-11-06T13:20:52+08:00",
+      "last_result": "pass",
+      "error_summary": "",
+      "suggested_action": "",
+      "test_env": null,
+      "notes": "PNG/JPG 与 GIF 共用同一条上传链路，已真机上传验证"
+    },
+    {
+      "feature_id": "playlist_rotation",
+      "name": "播放列表轮播",
+      "module": "src/vulcan_lcd/features/playlist.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [
+        "gif_upload",
+        "static_image"
+      ],
+      "last_test_at": "2026-11-06T10:57:00+08:00",
+      "last_result": "pass",
+      "error_summary": "",
+      "suggested_action": "",
+      "test_env": null,
+      "notes": "客户端轮播：先全部上传→校验清单→静置→按秒循环发 E51A；槽位必须连续（max+1）"
+    },
+    {
+      "feature_id": "gpu_monitor",
+      "name": "GPU 监控显示",
+      "module": "src/vulcan_lcd/features/monitor_gpu.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [],
+      "last_test_at": "2026-11-06T13:20:52+08:00",
+      "last_result": "pass",
+      "error_summary": "",
+      "suggested_action": "",
+      "test_env": null,
+      "notes": "本地 NVML 采集已验证（RTX 5070：型号/温度/占用/显存/频率/功耗/风扇）；监控数据上屏指令未验证，故只显示不发送"
+    },
+    {
+      "feature_id": "cpu_monitor",
+      "name": "CPU 监控显示",
+      "module": "src/vulcan_lcd/features/monitor_cpu.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [],
+      "last_test_at": "2026-11-06T13:20:52+08:00",
+      "last_result": "pass",
+      "error_summary": "",
+      "suggested_action": "",
+      "test_env": null,
+      "notes": "本地 psutil 采集已验证（型号/占用/频率/内存）；CPU 温度 Windows 无通用接口，如实显示不可用；不上屏"
+    },
+    {
+      "feature_id": "dual_screen_layout",
+      "name": "双屏分区布局",
+      "module": "src/vulcan_lcd/features/dual_screen.py",
+      "status": "experimental",
+      "protocol_verified": false,
+      "requires_protocol": true,
+      "depends_on": [
+        "gif_upload"
+      ],
+      "last_test_at": null,
+      "last_result": "not_run",
+      "error_summary": "分区/局部刷新指令是否存在未知",
+      "suggested_action": "needs_capture",
+      "test_env": null,
+      "notes": "可先实现本地位图合成（合并整图），但发送仍需上传通道。"
+    },
+    {
+      "feature_id": "ack_wait_optional",
+      "name": "可选 ACK 等待",
+      "module": "src/vulcan_lcd/core/transport.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [],
+      "last_test_at": "2026-11-04T16:07:10+08:00",
+      "last_result": "pass",
+      "error_summary": "",
+      "suggested_action": "",
+      "test_env": {
+        "model": "RTX 5070",
+        "port": "COM4",
+        "service": "iGameCenterService 2.0.0.82"
+      },
+      "notes": "默认关闭。开启后超时 500ms、最多重试 3 次；未验证前不得启用。"
+    },
+    {
+      "feature_id": "pyinstaller_packaging",
+      "name": "PyInstaller 打包",
+      "module": "main.spec, scripts/build.ps1",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": false,
+      "depends_on": [],
+      "last_test_at": "2026-11-04T09:18:00+08:00",
+      "last_result": "pass",
+      "error_summary": null,
+      "suggested_action": "none",
+      "test_env": {
+        "pyinstaller": "6.22.3",
+        "artifact": "dist/VulcanLCDUploader/VulcanLCDUploader.exe",
+        "size_mb": 103.5
+      },
+      "notes": "onedir 构建，103.5 MB / 173 文件。窗口版与控制台版均实机启动成功：`--check` 退出码 0，`--smoke=2500` 完整走完 context_ready→app_start→window_closed→app_exit。数据文件（config/feature_registry/LICENSE/NOTICES）随包进 _internal。启动方式需用 cmd start 分离，否则子进程继承管道导致父命令等待。exe 未签名，首次运行会有 SmartScreen 提示。"
+    },
+    {
+      "feature_id": "clear_device_cache",
+      "name": "清理设备无效缓存",
+      "module": "features.cache_clean",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [
+        "gif_upload",
+        "service_control"
+      ],
+      "last_test_at": "2026-11-05T18:20:42+08:00",
+      "last_result": "pass",
+      "error_summary": "",
+      "suggested_action": "",
+      "test_env": {
+        "model": "RTX 5070",
+        "port": "COM5",
+        "service": "iGameCenterService 2.0.0.82"
+      },
+      "notes": "实测指令 e718：5A9FA9000E E718 00 \"文件名\" 00 校验；只删除上传台账里记录的文件，不碰用户素材"
+    },
+    {
+      "feature_id": "device_settings",
+      "name": "设备设置（亮度/开机图/开机动画）",
+      "module": "features.device_settings",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [
+        "service_control"
+      ],
+      "last_test_at": "2026-11-06T11:34:48+08:00",
+      "last_result": "pass",
+      "error_summary": "",
+      "suggested_action": "",
+      "test_env": {
+        "model": "RTX 5070",
+        "firmware": "5.13",
+        "port": "COM5"
+      },
+      "notes": "E01F 读设置（固件 5.13/亮度/ID/OPType）实测可用；E11E 写亮度无应答但回读生效；EB14 切 Vulcan 生效、Kudan 本机不接受；E916 开机图/E21D 播放动画设备不回显，按已下发处理"
+    },
+    {
+      "feature_id": "monitor_onscreen",
+      "name": "监控数据上屏（设备端渲染）",
+      "module": "features/monitor_data.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [
+        "service_control"
+      ],
+      "last_test_at": "2026-11-06T13:20:52+08:00",
+      "last_result": "pass",
+      "test_env": {
+        "model": "RTX 5070",
+        "port": "COM5"
+      },
+      "notes": "CPU1/CPU5/GPU1/GPU3 帧依据反编译 LCD5ACore 实现；设备自行渲染，不上传图片。仅发送本机读得到的指标（显卡负载/温度/频率、CPU 负载/频率/内存）",
+      "error_summary": "",
+      "suggested_action": ""
+    },
+    {
+      "feature_id": "deep_clean",
+      "name": "彻底清理无效缓存",
+      "module": "features/cache_clean.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": true,
+      "depends_on": [
+        "gif_upload"
+      ],
+      "last_test_at": "2026-11-06T13:20:52+08:00",
+      "last_result": "pass",
+      "notes": "抓包确认官方垃圾桶 = e718 删除 img2..img6（保留 img1）；实测上传 2.11MB 后空间 49.05→46.92MB，清理后回到 49.05MB",
+      "error_summary": "",
+      "suggested_action": ""
+    },
+    {
+      "feature_id": "upload_history",
+      "name": "素材库（最近使用）",
+      "module": "features/history.py",
+      "status": "verified",
+      "protocol_verified": false,
+      "requires_protocol": false,
+      "last_test_at": "2026-11-06T13:20:52+08:00",
+      "last_result": "pass",
+      "notes": "本地 JSON 记录最近上传素材，最多 30 条，自动剔除失效路径",
+      "error_summary": "",
+      "suggested_action": ""
+    },
+    {
+      "feature_id": "tray_and_autostart",
+      "name": "托盘与开机自启",
+      "module": "features/autostart.py",
+      "status": "verified",
+      "protocol_verified": false,
+      "requires_protocol": false,
+      "last_test_at": "2026-11-06T13:20:52+08:00",
+      "last_result": "pass",
+      "notes": "关闭窗口默认最小化到托盘（可关）；开机自启写 HKCU Run 键，无需管理员",
+      "error_summary": "",
+      "suggested_action": ""
+    },
+    {
+      "feature_id": "standalone_mode",
+      "name": "独立模式（不依赖官方服务）",
+      "module": "system/service_control.py",
+      "status": "verified",
+      "protocol_verified": true,
+      "requires_protocol": false,
+      "depends_on": [
+        "service_control"
+      ],
+      "last_test_at": "2026-11-06T14:50:56+08:00",
+      "last_result": "pass",
+      "notes": "勾选后不查/不停/不启 iGameCenterService；实测服务名指向不存在的服务时上传、清理、查询全部正常（真机验证）",
+      "error_summary": "",
+      "suggested_action": ""
+    },
+    {
+      "feature_id": "new_ui",
+      "name": "新界面（深色控制台风格）",
+      "module": "ui2/",
+      "status": "verified",
+      "protocol_verified": false,
+      "requires_protocol": false,
+      "last_test_at": "2026-11-06T14:50:56+08:00",
+      "last_result": "pass",
+      "notes": "01-06 卡片布局；横屏预览在投屏内容、竖屏预览叠加在机箱显卡屏幕上；按钮悬停/按下动画；旧界面保留（--ui=old）",
+      "error_summary": "",
+      "suggested_action": ""
+    },
+    {
+      "feature_id": "no_flash_subprocess",
+      "name": "子进程不弹控制台",
+      "module": "system/proc.py",
+      "status": "verified",
+      "protocol_verified": false,
+      "requires_protocol": false,
+      "last_test_at": "2026-11-06T14:50:56+08:00",
+      "last_result": "pass",
+      "notes": "所有 sc/ffmpeg 子进程使用 CREATE_NO_WINDOW；服务状态 5 秒缓存、串口枚举 3 秒缓存（此前每秒弹一次黑框）",
+      "error_summary": "",
+      "suggested_action": ""
+    }
+  ]
+}

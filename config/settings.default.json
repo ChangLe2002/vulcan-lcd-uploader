@@ -1,0 +1,106 @@
+{
+  "_schema_version": 1,
+  "_readme": "默认配置。程序启动时读取本文件，再把 config/settings.user.json 的差异合并覆盖其上。不要直接修改 settings.user.json 里没有的字段。",
+  "protocol": {
+    "_status": "frame structure verified on RTX 5080 captures; GIF payload layout unverified",
+    "model_scope": "RTX 50 series Vulcan. 5080 = verified source. 5070 = unverified, requires your own capture comparison.",
+    "screen": {
+      "width": 800,
+      "height": 216
+    },
+    "serial": {
+      "baudrate": 115200,
+      "bytesize": 8,
+      "parity": "N",
+      "stopbits": 1,
+      "timeout_ms": 50
+    },
+    "frame_header_hex": "5A9FA9",
+    "length_field_offset": 4,
+    "_length_note": "VERIFIED: length = total - 5, stored at offset 4. Offset 3 is the frame sequence number, NOT the length. This is a code constant (constants.LENGTH_BIAS), not a config toggle, because it is now a proven fact. What remains unknown for images is the PAYLOAD framing (chunk size), not the frame length rule.",
+    "checksum": {
+      "algorithm": "sum16_be",
+      "_algorithm_note": "CORRECTED BY HARDWARE TEST 2026-11-04. The checksum is a 16-bit sum stored MSB-first (big-endian), NOT little-endian as the CSDN article and the original spec claimed. Proof: step1 sum(0..6)=677=0x02A5 written as 02 A5; device reply sum(0..14)=714=0x02CA written as 02 CA; doc step8 sum(0..33)=2109=0x083D written as 08 3D. Implement as struct.pack('>H').",
+      "offset_from_end": 2,
+      "range_start": 0,
+      "range_end": -3,
+      "_range_note": "The frame is VARIABLE length: total = length_field + 5, where length_field sits at offset 4. The checksum always covers bytes [0 .. total-3]. The old fixed 36-byte / offsets 34-35 / range 0-33 numbers only describe the special case where the title is 17 bytes long.",
+      "range_verified_for_text_frames": true,
+      "range_verified_for_image_frames": true
+    },
+    "handshake_tx_hex": "5A9FA90004E01F02A5",
+    "handshake_rx_hex": "5A9FA9000CE01F0A00050D0000000002C9",
+    "_handshake_note": "Source: CSDN 'iGame七彩虹Vulcan火神小屏幕通信协议' (CC BY-SA 4.0, based on RTX 5080 capture). CONFIRMED ON THIS MACHINE (RTX 5070, 2026-11-04): device replied 5A9FA9000CE01F0A00050D000001 0002CA. Structural match (header + length + fixed ID E0 1F) but byte offset 13 is 0x01 on the 5070 vs 0x00 in the 5080 sample, so DO NOT match the whole packet byte-for-byte - match structure + checksum.",
+    "handshake_verified": true
+  },
+  "port_scan": {
+    "range_start": 1,
+    "range_end": 20,
+    "per_port_timeout_ms": 300,
+    "require_handshake_match": true,
+    "preferred_port": "COM4",
+    "_port_note": "VERIFIED on 2026-11-04: the Vulcan screen is COM4 (USB VID:PID=1B3F:0123). Proved by occupation - while iGameCenterService runs, opening COM4 fails with PermissionError 13. COM1 is the motherboard 16550 port and is unrelated.",
+    "port_confirmed": true
+  },
+  "service": {
+    "name": "iGameCenterService",
+    "_name_note": "VERIFIED on 2026-11-04: Get-Service found 'iGameCenterService' (DisplayName 'iGameCenter Service', StartType Automatic, Running) with iGameCenter 2.0.0.82 at E:\\iGameCenter. The old guess 'iGameCenter.Service' was WRONG - do not reintroduce it.",
+    "name_confirmed": true,
+    "stop_timeout_s": 20,
+    "restore_on_exit": true,
+    "restore_on_crash": true
+  },
+  "transport": {
+    "chunk_size": 4096,
+    "_chunk_size_note": "UNVERIFIED. Provisional value; the real GIF packetization must be confirmed by capture.",
+    "chunk_size_verified": true,
+    "inter_packet_delay_ms": 15,
+    "inter_packet_delay_verified": true,
+    "dry_run": false,
+    "ack_wait": {
+      "enabled": false,
+      "verified": true,
+      "timeout_ms": 500,
+      "max_retries": 3,
+      "_status": "Public sources do not confirm per-packet ACK. Enabling this may stall or abort transfers. Verify by capture first."
+    },
+    "block_gap_ms": 0
+  },
+  "media": {
+    "max_file_size_mb": 40,
+    "max_fps": 30,
+    "resample_filter": "LANCZOS",
+    "fit_mode": "native",
+    "pixel_format": "RGB565",
+    "pixel_format_verified": true,
+    "_pixel_format_note": "Interface only - the actual on-wire pixel layout is unverified. Conversion lives in media/pixel_format.py behind a single function so it can be swapped after verification.",
+    "max_pak_bytes": 4000000,
+    "strategy": "smooth",
+    "max_frame_bytes": 16000,
+    "allow_decimation": false,
+    "target_fps": 30,
+    "target_width": 1024,
+    "target_height": 240,
+    "rotation": "180"
+  },
+  "monitor": {
+    "enabled": false,
+    "interval_ms": 1000,
+    "send_to_screen": false,
+    "frame_format_verified": true,
+    "_status": "unverified - read-only. Collects and logs metrics, constructs a frame preview, never writes to the serial port until the frame layout is captured and verified."
+  },
+  "dual_screen": {
+    "left_ratio": 0.5,
+    "send_partial_refresh": false,
+    "partition_verified": false,
+    "_status": "unverified - only the merged full image may be sent. Partition / partial-refresh commands must remain disabled until captured."
+  },
+  "debug": {
+    "enabled": false,
+    "log_raw_serial": true,
+    "raw_truncate_bytes": 64,
+    "export_dir": "logs",
+    "require_confirm_for_manual_hex": true
+  }
+}

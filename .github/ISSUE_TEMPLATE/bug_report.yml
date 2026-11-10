@@ -1,0 +1,43 @@
+﻿name: Bug 报告
+description: 软件行为异常、上传失败、崩溃等
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！提交前请先看 [排错文档](https://github.com/ChangLe2002/vulcan-lcd-uploader/blob/main/docs/TROUBLESHOOTING.md)。
+  - type: input
+    id: version
+    attributes:
+      label: 软件版本
+      description: 关于窗口里的版本号，或安装包文件名
+      placeholder: v0.4.2
+    validations:
+      required: true
+  - type: input
+    id: gpu
+    attributes:
+      label: 显卡型号
+      placeholder: iGame RTX 5070 Vulcan
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: 问题现象
+      description: 你做了什么、期望什么、实际发生了什么
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志
+      description: 菜单「文件 → 导出调试报告」，把 debug_report.md 内容贴在这里（可脱敏路径）
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 确认
+      options:
+        - label: 已退出「游戏加加」等 overlay 注入软件
+        - label: 已尝试断电 10 秒重启屏幕
